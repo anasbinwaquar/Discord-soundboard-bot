@@ -4,6 +4,8 @@ import requests
 from dotenv import load_dotenv
 from discord.ui import Button, View
 
+from fetch_data_url import fetch_data_url
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
@@ -14,6 +16,7 @@ client = discord.Client(intents=intents)
 SOUNDS_FOLDER = 'sounds'
 AVAILABLE_SOUNDS = {}
 
+
 # Initialize sound list
 def load_sounds():
     global AVAILABLE_SOUNDS
@@ -23,9 +26,11 @@ def load_sounds():
         if ext in ['.mp3', '.wav']:
             AVAILABLE_SOUNDS[name] = file
 
+
 load_sounds()
 
 import asyncio
+
 
 class SoundButton(Button):
     def __init__(self, label, sound_name):
@@ -66,10 +71,26 @@ class SoundButton(Button):
 async def on_ready():
     print(f'Logged in as {client.user}')
 
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
+
+    if message.content.startswith('$info'):
+        info_message = """
+                **Available Commands:**
+
+                `$list`: List all available sounds with clickable buttons.
+                `$play <sound_name>`: Play a specific sound. Example: `$play airhorn`
+                `$stop`: Stop the current playing sound.
+                `$leave`: Disconnect the bot from the voice channel.
+                `$addsound <name> <url>`: Add a new sound to the soundboard from a URL. Example: `$addsound airhorn https://www.myinstants.com/en/instant/dj-airhorn/ ( Please note the bot currently supports this website only )`
+                `$info`: Display this message with available commands.
+
+                **Note**: Sounds can be played in a voice channel where you are currently connected. You need to be in a voice channel for the bot to play sounds.
+                """
+        await message.channel.send(info_message)
 
     if message.content.startswith('$list'):
         if AVAILABLE_SOUNDS:
@@ -134,15 +155,14 @@ async def on_message(message):
 
         name = parts[1]
         url = parts[2]
-        ext = url.split('.')[-1]
+        print(url)
 
-        if ext not in ['mp3', 'wav']:
-            await message.channel.send('Only mp3 or wav files are supported.')
-            return
+        if 'myinstants' in url:
+            media_url, ext = fetch_data_url(url=url)
 
         sound_path = os.path.join(SOUNDS_FOLDER, f'{name}.{ext}')
         try:
-            response = requests.get(url)
+            response = requests.get(media_url)
             response.raise_for_status()
             with open(sound_path, 'wb') as f:
                 f.write(response.content)
@@ -151,5 +171,6 @@ async def on_message(message):
             await message.channel.send(f'Added new sound: {name}')
         except Exception as e:
             await message.channel.send(f'Failed to download sound: {e}')
+
 
 client.run(os.getenv('TOKEN'))
