@@ -4,7 +4,7 @@ from sound_button_factory import SoundButtonFactory
 
 
 def create_sound_list_view():
-    view = View()
+    view = View(timeout=60*60*24)
     for sound_name in AVAILABLE_SOUNDS:
         view.add_item(SoundButtonFactory.create(sound_name))
     return view
