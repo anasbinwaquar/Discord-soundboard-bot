@@ -46,7 +46,7 @@ async def on_message(message):
     elif message.content.startswith('/plays'):
         await handle_play_command(message)
 
-    elif message.content.startswith('/stop'):
+    elif message.content.startswith('/stops'):
         await stop_sound(message)
 
     elif message.content.startswith('/leave'):
