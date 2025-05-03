@@ -120,7 +120,7 @@ async def handle_play_command_with_name(message, sound_name):
 async def handle_removesound_command(message):
     parts = message.content.split()
     if len(parts) < 2:
-        await message.channel.send('Usage: $removesound <sound_name>')
+        await message.channel.send('Usage: /removesound <sound_name>')
         return
 
     sound_name = parts[1]

@@ -36,46 +36,46 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.startswith('$info'):
+    if message.content.startswith('/info'):
         await send_info(message)
 
-    elif message.content.startswith('$list'):
+    elif message.content.startswith('/list'):
         if AVAILABLE_SOUNDS:
             await send_sound_list_message(message)
         else:
             await message.channel.send('No sounds available.')
 
-    elif message.content.startswith('$play'):
+    elif message.content.startswith('/play'):
         await handle_play_command(message)
 
     # Stop the currently playing sound
-    elif message.content.startswith('$stop'):
+    elif message.content.startswith('/stop'):
         await stop_sound(message)
 
-    elif message.content.startswith('$leave'):
+    elif message.content.startswith('/leave'):
         await handle_leave_command(message)
 
-    elif message.content.startswith('$add'):
+    elif message.content.startswith('/add'):
         await handle_addsound_command(message)
 
-    elif message.content.startswith('$addandplay'):
+    elif message.content.startswith('/addandplay'):
         await handle_addandplay_command(message)
 
-    elif message.content.startswith('$removesound'):
+    elif message.content.startswith('/removesound'):
         await handle_removesound_command(message)
 
 async def send_info(message):
     info_message = """
             **Available Commands:**
 
-            `$list`: List all available sounds with clickable buttons.
-            `$play <sound_name>`: Play a specific sound. Example: `$play airhorn`
-            `$stop`: Stop the current playing sound.
-            `$leave`: Disconnect the bot from the voice channel.
-            `$add <name> <url>`: Add a new sound to the soundboard from a URL.
-            `$info`: Display this message with available commands.
-            `$addandplay <name> <url>`: Downloads the sound and plays it.
-            `$removesound <sound_name>`: Remove a sound.
+            `/list`: List all available sounds with clickable buttons.
+            `/play <sound_name>`: Play a specific sound. Example: `/play airhorn`
+            `/stop`: Stop the current playing sound.
+            `/leave`: Disconnect the bot from the voice channel.
+            `/add <name> <url>`: Add a new sound to the soundboard from a URL.
+            `/info`: Display this message with available commands.
+            `/addandplay <name> <url>`: Downloads the sound and plays it.
+            `/removesound <sound_name>`: Remove a sound.
 
             **Note**: Sounds can be played in a voice channel where you are currently connected.
             """
@@ -92,7 +92,7 @@ async def handle_play_command(message):
 
         parts = message.content.split()
         if len(parts) < 2:
-            await message.channel.send('Please specify a sound! Example: `$play airhorn`')
+            await message.channel.send('Please specify a sound! Example: `/play airhorn`')
             return
 
         sound_name = parts[1]
@@ -116,7 +116,7 @@ async def handle_leave_command(message):
 async def handle_addsound_command(message):
     parts = message.content.split()
     if len(parts) < 3:
-        await message.channel.send('Usage: $add <name> <url_to_mp3_or_wav>')
+        await message.channel.send('Usage: /add <name> <url_to_mp3_or_wav>')
         return
 
     name = parts[1]
@@ -126,7 +126,7 @@ async def handle_addsound_command(message):
 async def handle_addandplay_command(message):
     parts = message.content.split()
     if len(parts) < 3:
-        await message.channel.send('Usage: $addandplay <name> <url_to_mp3_or_wav>')
+        await message.channel.send('Usage: /addandplay <name> <url_to_mp3_or_wav>')
         return
 
     name = parts[1]
