@@ -1,13 +1,11 @@
-from discord.ui import View
-from constants import AVAILABLE_SOUNDS
-from sound_button_factory import SoundButtonFactory
+import os
 import discord
 import requests
-from fetch_data_url import fetch_data_url
-from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
-import os
-
 from discord.ui import Button, View
+from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
+from fetch_data_url import fetch_data_url
+from ConfirmView import ConfirmView
+from sound_button_factory import SoundButtonFactory
 
 MAX_BUTTONS = 24
 
@@ -20,6 +18,7 @@ class PageButton(Button):
 
     async def callback(self, interaction):
         await self.callback_func(interaction, self.page)
+
 
 def create_sound_list_view(page, total_pages, callback_func):
     view = View(timeout=None)
@@ -38,51 +37,44 @@ def create_sound_list_view(page, total_pages, callback_func):
 
     return view
 
-async def send_sound_list_message(message):
+
+async def send_sound_list_message(interaction):
     total_pages = (len(AVAILABLE_SOUNDS) + MAX_BUTTONS - 1) // MAX_BUTTONS
 
-    async def page_callback(interaction, page):
+    async def page_callback(inter, page):
         view = create_sound_list_view(page, total_pages, page_callback)
-        await interaction.response.edit_message(content="Click a sound to play:", view=view)
+        await inter.response.edit_message(content="Click a sound to play:", view=view)
 
     view = create_sound_list_view(0, total_pages, page_callback)
-    await message.channel.send("Click a sound to play:", view=view)
-
-async def send_sound_list_interaction(interaction):
-    total_pages = (len(AVAILABLE_SOUNDS) + MAX_BUTTONS - 1) // MAX_BUTTONS
-
-    async def page_callback(interaction, page):
-        view = create_sound_list_view(page, total_pages, page_callback)
-        await interaction.response.edit_message(content="Click a sound to play:", view=view)
-
-    view = create_sound_list_view(0, total_pages, page_callback)
-    await interaction.followup.send("Click a sound to play:", view=view)
+    await interaction.response.send_message("Click a sound to play:", view=view)
 
 
-async def play_sound(message, sound_name, sound_path):
-    vc = message.guild.voice_client
+async def play_sound(interaction, sound_name, sound_path):
+    vc = interaction.guild.voice_client
     audio_source = discord.FFmpegPCMAudio(sound_path)
 
     if vc.is_playing():
         vc.stop()
 
     vc.play(audio_source, after=lambda e: print('Finished playing'))
-    await message.channel.send(f'Playing {sound_name} 🔊')
+    await interaction.followup.send(f'🔊 Playing `{sound_name}`')
 
 
-async def stop_sound(message):
-    if message.guild.voice_client and message.guild.voice_client.is_playing():
-        message.guild.voice_client.stop()
-        await message.channel.send('Stopped the sound.')
+async def stop_sound(interaction):
+    vc = interaction.guild.voice_client
+    if vc and vc.is_playing():
+        vc.stop()
+        await interaction.response.send_message('⏹️ Stopped the sound.')
     else:
-        await message.channel.send('Nothing is playing.')
+        await interaction.response.send_message('⚠️ Nothing is playing.')
 
-async def add_sound_to_board(message, name, url):
+
+async def add_sound_to_board(interaction, name, url):
     try:
         if 'myinstants' in url:
             media_url, ext = fetch_data_url(url=url)
         else:
-            await message.channel.send('Unsupported URL. Currently supports only https://www.myinstants.com/.')
+            await interaction.response.send_message('⚠️ Unsupported URL. Only https://www.myinstants.com/ is supported.')
             return False
 
         sound_path = os.path.join(SOUNDS_FOLDER, f'{name}.{ext}')
@@ -92,41 +84,36 @@ async def add_sound_to_board(message, name, url):
             f.write(response.content)
 
         AVAILABLE_SOUNDS[name] = f'{name}.{ext}'
-        await message.channel.send(f'Added new sound: {name}')
+        await interaction.response.send_message(f'✅ Added new sound: `{name}`')
         return True
     except Exception as e:
-        await message.channel.send(f'Failed to download sound: {e}')
+        await interaction.response.send_message(f'❌ Failed to download sound: {e}')
         return False
 
-async def handle_play_command_with_name(message, sound_name):
-    if message.author.voice:
-        channel = message.author.voice.channel
-        if message.guild.voice_client is None:
+
+async def handle_play_command_with_name(interaction, sound_name):
+    if interaction.user.voice:
+        channel = interaction.user.voice.channel
+        vc = interaction.guild.voice_client
+
+        if vc is None:
             vc = await channel.connect()
         else:
-            vc = message.guild.voice_client
             await vc.move_to(channel)
 
         if sound_name not in AVAILABLE_SOUNDS:
-            await message.channel.send(f'Invalid sound! Available: {", ".join(AVAILABLE_SOUNDS.keys())}')
+            await interaction.response.send_message(f'❌ Invalid sound! Available: {", ".join(AVAILABLE_SOUNDS.keys())}')
             return
 
         sound_path = os.path.join(SOUNDS_FOLDER, AVAILABLE_SOUNDS[sound_name])
-        await play_sound(message, sound_name, sound_path)
-
+        await play_sound(interaction, sound_name, sound_path)
     else:
-        await message.channel.send('You are not in a voice channel!')
+        await interaction.response.send_message('⚠️ You are not in a voice channel!')
 
-async def handle_removesound_command(message):
-    parts = message.content.split()
-    if len(parts) < 2:
-        await message.channel.send('Usage: /removesound <sound_name>')
-        return
 
-    sound_name = parts[1]
-
+async def handle_removesound_command(interaction, sound_name):
     if sound_name not in AVAILABLE_SOUNDS:
-        await message.channel.send(f'Sound "{sound_name}" does not exist.')
+        await interaction.response.send_message(f'❌ Sound `{sound_name}` does not exist.')
         return
 
     sound_path = os.path.join(SOUNDS_FOLDER, AVAILABLE_SOUNDS[sound_name])
@@ -135,6 +122,36 @@ async def handle_removesound_command(message):
         if os.path.exists(sound_path):
             os.remove(sound_path)
         del AVAILABLE_SOUNDS[sound_name]
-        await message.channel.send(f'Removed sound: {sound_name}')
+        await interaction.response.send_message(f'✅ Removed sound: `{sound_name}`')
     except Exception as e:
-        await message.channel.send(f'Failed to remove sound: {e}')
+        await interaction.response.send_message(f'❌ Failed to remove sound: {e}')
+
+
+async def handle_leave_command(interaction):
+    vc = interaction.guild.voice_client
+    if vc:
+        await vc.disconnect()
+        await interaction.response.send_message('👋 Disconnected from the voice channel.')
+    else:
+        await interaction.response.send_message('⚠️ Not connected to any voice channel.')
+
+
+async def handle_addsound_command(interaction, sound_name, url):
+    await add_sound_to_board(interaction, sound_name, url)
+
+
+async def handle_addandplay_command(interaction, sound_name, url):
+    success = await add_sound_to_board(interaction, sound_name, url)
+    if success:
+        await handle_play_command_with_name(interaction, sound_name)
+
+
+async def handle_removeall_command(interaction):
+    async def confirm_callback(confirm_interaction):
+        for file in os.listdir(SOUNDS_FOLDER):
+            os.remove(os.path.join(SOUNDS_FOLDER, file))
+        AVAILABLE_SOUNDS.clear()
+        await confirm_interaction.response.send_message('✅ All sounds removed!')
+
+    view = ConfirmView(confirm_callback)
+    await interaction.response.send_message('⚠️ Are you sure you want to remove all sounds?', view=view)
