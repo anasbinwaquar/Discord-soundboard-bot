@@ -3,6 +3,7 @@ import os
 import discord
 from dotenv import load_dotenv
 
+from ConfirmView import ConfirmView
 from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
 from utils import add_sound_to_board, handle_play_command_with_name, handle_removesound_command, play_sound, \
     send_sound_list_message, stop_sound
@@ -48,21 +49,24 @@ async def on_message(message):
     elif message.content.startswith('/play'):
         await handle_play_command(message)
 
-    # Stop the currently playing sound
     elif message.content.startswith('/stop'):
         await stop_sound(message)
 
     elif message.content.startswith('/leave'):
         await handle_leave_command(message)
 
-    elif message.content.startswith('/add'):
-        await handle_addsound_command(message)
-
     elif message.content.startswith('/addandplay'):
         await handle_addandplay_command(message)
 
-    elif message.content.startswith('/removesound'):
+    elif message.content.startswith('/add'):
+        await handle_addsound_command(message)
+
+    elif message.content.startswith('/removeall'):
+        await handle_removeall_command(message)
+
+    elif message.content.startswith('/remove'):
         await handle_removesound_command(message)
+
 
 async def send_info(message):
     info_message = """
@@ -75,7 +79,8 @@ async def send_info(message):
             `/add <name> <url>`: Add a new sound to the soundboard from a URL.
             `/info`: Display this message with available commands.
             `/addandplay <name> <url>`: Downloads the sound and plays it.
-            `/removesound <sound_name>`: Remove a sound.
+            `/remove <sound_name>`: Remove a sound.
+            `/removeall`: Remove all sounds.
 
             **Note**: Sounds can be played in a voice channel where you are currently connected.
             """
@@ -135,5 +140,16 @@ async def handle_addandplay_command(message):
     success = await add_sound_to_board(message, name, url)
     if success:
         await handle_play_command_with_name(message, name)
+
+async def handle_removeall_command(message):
+    async def confirm_callback(interaction):
+        # Remove all sound files
+        for file in os.listdir(SOUNDS_FOLDER):
+            os.remove(os.path.join(SOUNDS_FOLDER, file))
+        AVAILABLE_SOUNDS.clear()
+        await interaction.response.send_message('✅ All sounds removed!', ephemeral=False)
+
+    view = ConfirmView(confirm_callback)
+    await message.channel.send('⚠️ Are you sure you want to remove all sounds?', view=view)
 
 client.run(os.getenv('TOKEN'))

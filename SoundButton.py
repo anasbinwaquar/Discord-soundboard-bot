@@ -30,6 +30,6 @@ class SoundButton(Button):
             #         interaction.client.loop.create_task(send_sound_list_interaction(interaction))
 
             vc.play(audio_source)
-            # await interaction.response.send_message(f'Playing {self.sound_name} 🔊')
+            await interaction.response.emo(f'Playing {self.sound_name} 🔊')
         else:
             await interaction.response.send_message('You are not in a voice channel!')
