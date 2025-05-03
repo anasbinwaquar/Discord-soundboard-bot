@@ -25,11 +25,12 @@ async def play_sound(message, sound_name, sound_path):
     vc = message.guild.voice_client
     audio_source = discord.FFmpegPCMAudio(sound_path)
 
-    if not vc.is_playing():
-        vc.play(audio_source, after=lambda e: print('Finished playing'))
-        await message.channel.send(f'Playing {sound_name} 🔊')
-    else:
-        await message.channel.send('Already playing something! Wait or use /stop')
+    if vc.is_playing():
+        vc.stop()
+
+    vc.play(audio_source, after=lambda e: print('Finished playing'))
+    await message.channel.send(f'Playing {sound_name} 🔊')
+
 
 async def stop_sound(message):
     if message.guild.voice_client and message.guild.voice_client.is_playing():
