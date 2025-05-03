@@ -43,7 +43,7 @@ async def on_message(message):
     elif message.content.startswith('/list'):
         await send_sound_list_message(message)
 
-    elif message.content.startswith('/play'):
+    elif message.content.startswith('/plays'):
         await handle_play_command(message)
 
     elif message.content.startswith('/stop'):

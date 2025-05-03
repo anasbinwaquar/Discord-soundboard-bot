@@ -22,7 +22,7 @@ class PageButton(Button):
         await self.callback_func(interaction, self.page)
 
 def create_sound_list_view(page, total_pages, callback_func):
-    view = View(timeout=60 * 60 * 24)
+    view = View(timeout=None)
     sound_names = list(AVAILABLE_SOUNDS.keys())
     start = page * MAX_BUTTONS
     end = start + MAX_BUTTONS
