@@ -29,10 +29,8 @@ class SoundButton(Button):
             #         from utils import send_sound_list_interaction
             #         interaction.client.loop.create_task(send_sound_list_interaction(interaction))
 
-                vc.play(audio_source)
-                await interaction.response.send_message(f'Playing {self.sound_name} 🔊')
-            else:
-                await interaction.response.send_message('Already playing something! Wait or use $stop')
+            vc.play(audio_source)
+            await interaction.response.send_message(f'Playing {self.sound_name} 🔊')
 
         else:
             await interaction.response.send_message('You are not in a voice channel!')
