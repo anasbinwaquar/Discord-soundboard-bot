@@ -42,7 +42,8 @@ class Soundboard(commands.Cog):
         """
         await interaction.response.send_message(info_message)
 
-    @app_commands.command(name="plays", description="Play a sound")
+    @app_commands.command(name="play", description="Play a sound")
+    @app_commands.describe(sound_name="Name to save the sound as")
     async def play(self, interaction: discord.Interaction, sound_name: str):
         await handle_play_command_with_name(interaction, sound_name)
 
@@ -52,6 +53,7 @@ class Soundboard(commands.Cog):
         await handle_addsound_command(interaction, sound_name, url)
 
     @app_commands.command(name="remove", description="Remove a sound")
+    @app_commands.describe(sound_name="Name of sound to remove")
     async def remove(self, interaction: discord.Interaction, sound_name: str):
         await handle_removesound_command(interaction, sound_name)
 

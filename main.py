@@ -20,6 +20,7 @@ bot = commands.Bot(command_prefix='/', intents=intents)
 @bot.event
 async def on_ready():
     await bot.load_extension('cogs.soundboard')
+    # guild = discord.Object(id=GUILDID)
     await bot.tree.sync()
     print(f'✅ Logged in as {bot.user} and synced commands.')
 
