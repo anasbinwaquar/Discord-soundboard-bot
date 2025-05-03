@@ -1,0 +1,2 @@
+SOUNDS_FOLDER = 'sounds'
+AVAILABLE_SOUNDS = {}
