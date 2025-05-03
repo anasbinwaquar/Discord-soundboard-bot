@@ -1,12 +1,12 @@
-import discord
 import os
+
+import discord
 import requests
 from dotenv import load_dotenv
-from discord.ui import Button, View
 
 from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
 from fetch_data_url import fetch_data_url
-from SoundButton import SoundButton
+from utils import send_sound_list_message
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -17,7 +17,6 @@ client = discord.Client(intents=intents)
 
 
 
-# Initialize sound list
 def load_sounds():
     for file in os.listdir(SOUNDS_FOLDER):
         name, ext = os.path.splitext(file)
@@ -54,11 +53,7 @@ async def on_message(message):
 
     if message.content.startswith('$list'):
         if AVAILABLE_SOUNDS:
-            view = View()
-            for sound_name in AVAILABLE_SOUNDS:
-                button = SoundButton(label=sound_name, sound_name=sound_name)
-                view.add_item(button)
-            await message.channel.send("Click a sound to play:", view=view)
+            await send_sound_list_message(message)
         else:
             await message.channel.send('No sounds available.')
 

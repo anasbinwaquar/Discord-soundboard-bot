@@ -1,8 +1,6 @@
 import os
-
 import discord
-from discord.ui import Button, View
-
+from discord.ui import Button
 from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
 
 
@@ -25,7 +23,8 @@ class SoundButton(Button):
 
             if not vc.is_playing():
                 def after_playing(e):
-                    interaction.client.loop.create_task(self.send_sound_list(interaction))
+                    from utils import send_sound_list_interaction
+                    interaction.client.loop.create_task(send_sound_list_interaction(interaction))
 
                 vc.play(audio_source, after=after_playing)
                 await interaction.response.send_message(f'Playing {self.sound_name} 🔊')
@@ -34,13 +33,3 @@ class SoundButton(Button):
 
         else:
             await interaction.response.send_message('You are not in a voice channel!')
-
-    async def generate_sound_list(self, interaction):
-        view = View()
-        for sound_name in AVAILABLE_SOUNDS:
-            button = SoundButton(label=sound_name, sound_name=sound_name)
-            view.add_item(button)
-
-    async def send_sound_list(self, interaction):
-        sound_list = ', '.join(AVAILABLE_SOUNDS.keys())
-        await interaction.followup.send(f'Finished playing {self.sound_name}. Available sounds: {sound_list}')
