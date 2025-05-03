@@ -74,6 +74,8 @@ async def send_info(message):
             `$leave`: Disconnect the bot from the voice channel.
             `$addsound <name> <url>`: Add a new sound to the soundboard from a URL.
             `$info`: Display this message with available commands.
+            `$addandplay <name> <url>`: Downloads the sound and plays it.
+            `$removesound <sound_name>`: Remove a sound.
 
             **Note**: Sounds can be played in a voice channel where you are currently connected.
             """
