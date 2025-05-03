@@ -7,19 +7,57 @@ from fetch_data_url import fetch_data_url
 from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
 import os
 
-def create_sound_list_view():
-    view = View(timeout=60*60*24)
-    for sound_name in AVAILABLE_SOUNDS:
+from discord.ui import Button, View
+
+MAX_BUTTONS = 24
+
+class PageButton(Button):
+    def __init__(self, label, page, total_pages, callback_func):
+        super().__init__(label=label, style=discord.ButtonStyle.secondary)
+        self.page = page
+        self.total_pages = total_pages
+        self.callback_func = callback_func
+
+    async def callback(self, interaction):
+        await self.callback_func(interaction, self.page)
+
+def create_sound_list_view(page, total_pages, callback_func):
+    view = View(timeout=60 * 60 * 24)
+    sound_names = list(AVAILABLE_SOUNDS.keys())
+    start = page * MAX_BUTTONS
+    end = start + MAX_BUTTONS
+
+    for sound_name in sound_names[start:end]:
         view.add_item(SoundButtonFactory.create(sound_name))
+
+    if total_pages > 1:
+        if page > 0:
+            view.add_item(PageButton('⬅️ Previous', page - 1, total_pages, callback_func))
+        if page < total_pages - 1:
+            view.add_item(PageButton('➡️ Next', page + 1, total_pages, callback_func))
+
     return view
 
 async def send_sound_list_message(message):
-    view = create_sound_list_view()
+    total_pages = (len(AVAILABLE_SOUNDS) + MAX_BUTTONS - 1) // MAX_BUTTONS
+
+    async def page_callback(interaction, page):
+        view = create_sound_list_view(page, total_pages, page_callback)
+        await interaction.response.edit_message(content="Click a sound to play:", view=view)
+
+    view = create_sound_list_view(0, total_pages, page_callback)
     await message.channel.send("Click a sound to play:", view=view)
 
 async def send_sound_list_interaction(interaction):
-    view = create_sound_list_view()
+    total_pages = (len(AVAILABLE_SOUNDS) + MAX_BUTTONS - 1) // MAX_BUTTONS
+
+    async def page_callback(interaction, page):
+        view = create_sound_list_view(page, total_pages, page_callback)
+        await interaction.response.edit_message(content="Click a sound to play:", view=view)
+
+    view = create_sound_list_view(0, total_pages, page_callback)
     await interaction.followup.send("Click a sound to play:", view=view)
+
 
 async def play_sound(message, sound_name, sound_path):
     vc = message.guild.voice_client

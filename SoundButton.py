@@ -29,7 +29,7 @@ class SoundButton(Button):
                 vc.play(audio_source, after=after_playing)
                 await interaction.response.send_message(f'Playing {self.sound_name} 🔊')
             else:
-                await interaction.response.send_message('Already playing something! Wait or use /stop')
+                await interaction.response.send_message('Already playing something! Wait or use $stop')
 
         else:
             await interaction.response.send_message('You are not in a voice channel!')

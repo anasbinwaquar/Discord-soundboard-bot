@@ -55,7 +55,7 @@ async def on_message(message):
     elif message.content.startswith('$leave'):
         await handle_leave_command(message)
 
-    elif message.content.startswith('$addsound'):
+    elif message.content.startswith('$add'):
         await handle_addsound_command(message)
 
     elif message.content.startswith('$addandplay'):
@@ -72,7 +72,7 @@ async def send_info(message):
             `$play <sound_name>`: Play a specific sound. Example: `$play airhorn`
             `$stop`: Stop the current playing sound.
             `$leave`: Disconnect the bot from the voice channel.
-            `$addsound <name> <url>`: Add a new sound to the soundboard from a URL.
+            `$add <name> <url>`: Add a new sound to the soundboard from a URL.
             `$info`: Display this message with available commands.
             `$addandplay <name> <url>`: Downloads the sound and plays it.
             `$removesound <sound_name>`: Remove a sound.
@@ -116,7 +116,7 @@ async def handle_leave_command(message):
 async def handle_addsound_command(message):
     parts = message.content.split()
     if len(parts) < 3:
-        await message.channel.send('Usage: $addsound <name> <url_to_mp3_or_wav>')
+        await message.channel.send('Usage: $add <name> <url_to_mp3_or_wav>')
         return
 
     name = parts[1]
