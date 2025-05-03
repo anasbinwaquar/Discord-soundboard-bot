@@ -3,6 +3,7 @@ import discord
 from discord.ui import Button
 from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
 
+
 class SoundButton(Button):
     def __init__(self, label, sound_name):
         super().__init__(label=label, style=discord.ButtonStyle.primary)
@@ -20,14 +21,15 @@ class SoundButton(Button):
             sound_path = os.path.join(SOUNDS_FOLDER, AVAILABLE_SOUNDS[self.sound_name])
             audio_source = discord.FFmpegPCMAudio(sound_path)
 
-            def after_playing(e):
-                from utils import send_sound_list_interaction
-                interaction.client.loop.create_task(send_sound_list_interaction(interaction))
+            if not vc.is_playing():
+                def after_playing(e):
+                    from utils import send_sound_list_interaction
+                    interaction.client.loop.create_task(send_sound_list_interaction(interaction))
 
-            # 🔥 REMOVE the is_playing check → directly interrupt with .play()
-            vc.play(audio_source, after=after_playing)
-            await interaction.response.send_message(f'Playing {self.sound_name} 🔊', ephemeral=True)
+                vc.play(audio_source, after=after_playing)
+                await interaction.response.send_message(f'Playing {self.sound_name} 🔊')
+            else:
+                await interaction.response.send_message('Already playing something! Wait or use /stop')
 
         else:
-            await interaction.response.send_message('You are not in a voice channel!', ephemeral=True)
-
+            await interaction.response.send_message('You are not in a voice channel!')
