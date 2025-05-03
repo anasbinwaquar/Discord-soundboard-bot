@@ -41,10 +41,7 @@ async def on_message(message):
         await send_info(message)
 
     elif message.content.startswith('/list'):
-        if AVAILABLE_SOUNDS:
-            await send_sound_list_message(message)
-        else:
-            await message.channel.send('No sounds available.')
+        await send_sound_list_message(message)
 
     elif message.content.startswith('/play'):
         await handle_play_command(message)
