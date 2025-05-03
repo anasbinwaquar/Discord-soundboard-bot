@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 
 from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
 from fetch_data_url import fetch_data_url
-from utils import send_sound_list_message, play_sound, stop_sound, add_sound_to_board
+from utils import handle_play_command_with_name, handle_removesound_command, send_sound_list_message, play_sound, \
+    stop_sound, add_sound_to_board
 
 # Initialize intents and client
 intents = discord.Intents.default()
@@ -56,6 +57,12 @@ async def on_message(message):
     elif message.content.startswith('$addsound'):
         await handle_addsound_command(message)
 
+    elif message.content.startswith('$addandplay'):
+        await handle_addandplay_command(message)
+
+    elif message.content.startswith('$removesound'):
+        await handle_removesound_command(message)
+
 async def send_info(message):
     info_message = """
             **Available Commands:**
@@ -82,7 +89,7 @@ async def handle_play_command(message):
 
         parts = message.content.split()
         if len(parts) < 2:
-            await message.channel.send('Please specify a sound! Example: `/play airhorn`')
+            await message.channel.send('Please specify a sound! Example: `$play airhorn`')
             return
 
         sound_name = parts[1]
@@ -106,11 +113,24 @@ async def handle_leave_command(message):
 async def handle_addsound_command(message):
     parts = message.content.split()
     if len(parts) < 3:
-        await message.channel.send('Usage: /addsound <name> <url_to_mp3_or_wav>')
+        await message.channel.send('Usage: $addsound <name> <url_to_mp3_or_wav>')
         return
 
     name = parts[1]
     url = parts[2]
     await add_sound_to_board(message, name, url)
+
+async def handle_addandplay_command(message):
+    parts = message.content.split()
+    if len(parts) < 3:
+        await message.channel.send('Usage: $addandplay <name> <url_to_mp3_or_wav>')
+        return
+
+    name = parts[1]
+    url = parts[2]
+
+    success = await add_sound_to_board(message, name, url)
+    if success:
+        await handle_play_command_with_name(message, name)
 
 client.run(os.getenv('TOKEN'))
