@@ -1,14 +1,15 @@
 import os
+
 import discord
-import requests
 from dotenv import load_dotenv
 
 from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
-from fetch_data_url import fetch_data_url
-from utils import handle_play_command_with_name, handle_removesound_command, send_sound_list_message, play_sound, \
-    stop_sound, add_sound_to_board
+from utils import add_sound_to_board, handle_play_command_with_name, handle_removesound_command, play_sound, \
+    send_sound_list_message, stop_sound
 
-# Initialize intents and client
+if not os.path.exists(SOUNDS_FOLDER):
+    os.makedirs(SOUNDS_FOLDER)
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True

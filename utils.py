@@ -43,7 +43,7 @@ async def add_sound_to_board(message, name, url):
         if 'myinstants' in url:
             media_url, ext = fetch_data_url(url=url)
         else:
-            await message.channel.send('Unsupported URL. Currently supports only myinstants.')
+            await message.channel.send('Unsupported URL. Currently supports only https://www.myinstants.com/.')
             return False
 
         sound_path = os.path.join(SOUNDS_FOLDER, f'{name}.{ext}')
