@@ -8,9 +8,9 @@ def fetch_data_url(url):
         soup = BeautifulSoup(response.content, 'html.parser')
         media_url = soup.find(id="instant-page-button-element").attrs.get('data-url')
         if '.mp3' in media_url:
-            ext = '.mp3'
+            ext = 'mp3'
         elif '.wav' in media_url:
-            ext = '.wav'
+            ext = 'wav'
         if media_url:
             return f"https://www.myinstants.com{media_url}", ext
         else:

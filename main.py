@@ -4,7 +4,9 @@ import requests
 from dotenv import load_dotenv
 from discord.ui import Button, View
 
+from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
 from fetch_data_url import fetch_data_url
+from SoundButton import SoundButton
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -13,14 +15,10 @@ intents.guilds = True
 load_dotenv()
 client = discord.Client(intents=intents)
 
-SOUNDS_FOLDER = 'sounds'
-AVAILABLE_SOUNDS = {}
 
 
 # Initialize sound list
 def load_sounds():
-    global AVAILABLE_SOUNDS
-    AVAILABLE_SOUNDS = {}
     for file in os.listdir(SOUNDS_FOLDER):
         name, ext = os.path.splitext(file)
         if ext in ['.mp3', '.wav']:
@@ -28,44 +26,6 @@ def load_sounds():
 
 
 load_sounds()
-
-import asyncio
-
-
-class SoundButton(Button):
-    def __init__(self, label, sound_name):
-        super().__init__(label=label, style=discord.ButtonStyle.primary)
-        self.sound_name = sound_name
-
-    async def callback(self, interaction):
-        if interaction.user.voice:
-            channel = interaction.user.voice.channel
-            if interaction.guild.voice_client is None:
-                vc = await channel.connect()
-            else:
-                vc = interaction.guild.voice_client
-                await vc.move_to(channel)
-
-            sound_path = os.path.join(SOUNDS_FOLDER, AVAILABLE_SOUNDS[self.sound_name])
-            audio_source = discord.FFmpegPCMAudio(sound_path)
-
-            if not vc.is_playing():
-                def after_playing(e):
-                    interaction.client.loop.create_task(self.send_sound_list(interaction))
-
-                vc.play(audio_source, after=after_playing)
-                await interaction.response.send_message(f'Playing {self.sound_name} 🔊')
-            else:
-                await interaction.response.send_message('Already playing something! Wait or use /stop')
-
-        else:
-            await interaction.response.send_message('You are not in a voice channel!')
-
-    async def send_sound_list(self, interaction):
-        # After sound finishes, send the list of available sounds
-        sound_list = ', '.join(AVAILABLE_SOUNDS.keys())
-        await interaction.followup.send(f'Finished playing {self.sound_name}. Available sounds: {sound_list}')
-
 
 @client.event
 async def on_ready():
