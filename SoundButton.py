@@ -21,12 +21,15 @@ class SoundButton(Button):
             sound_path = os.path.join(SOUNDS_FOLDER, AVAILABLE_SOUNDS[self.sound_name])
             audio_source = discord.FFmpegPCMAudio(sound_path)
 
-            if not vc.is_playing():
-                def after_playing(e):
-                    from utils import send_sound_list_interaction
-                    interaction.client.loop.create_task(send_sound_list_interaction(interaction))
+            if vc.is_playing():
+                vc.stop()
 
-                vc.play(audio_source, after=after_playing)
+            # if not vc.is_playing():
+            #     def after_playing(e):
+            #         from utils import send_sound_list_interaction
+            #         interaction.client.loop.create_task(send_sound_list_interaction(interaction))
+
+                vc.play(audio_source)
                 await interaction.response.send_message(f'Playing {self.sound_name} 🔊')
             else:
                 await interaction.response.send_message('Already playing something! Wait or use $stop')
