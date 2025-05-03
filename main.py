@@ -1,21 +1,20 @@
 import os
-
 import discord
 import requests
 from dotenv import load_dotenv
 
 from constants import AVAILABLE_SOUNDS, SOUNDS_FOLDER
 from fetch_data_url import fetch_data_url
-from utils import send_sound_list_message
+from utils import send_sound_list_message, play_sound, stop_sound, add_sound_to_board
 
+# Initialize intents and client
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
 intents.guilds = True
 load_dotenv()
+
 client = discord.Client(intents=intents)
-
-
 
 def load_sounds():
     for file in os.listdir(SOUNDS_FOLDER):
@@ -23,13 +22,12 @@ def load_sounds():
         if ext in ['.mp3', '.wav']:
             AVAILABLE_SOUNDS[name] = file
 
-
+# Load sounds at startup
 load_sounds()
 
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user}')
-
 
 @client.event
 async def on_message(message):
@@ -37,95 +35,82 @@ async def on_message(message):
         return
 
     if message.content.startswith('$info'):
-        info_message = """
-                **Available Commands:**
+        await send_info(message)
 
-                `$list`: List all available sounds with clickable buttons.
-                `$play <sound_name>`: Play a specific sound. Example: `$play airhorn`
-                `$stop`: Stop the current playing sound.
-                `$leave`: Disconnect the bot from the voice channel.
-                `$addsound <name> <url>`: Add a new sound to the soundboard from a URL. Example: `$addsound airhorn https://www.myinstants.com/en/instant/dj-airhorn/ ( Please note the bot currently supports this website only )`
-                `$info`: Display this message with available commands.
-
-                **Note**: Sounds can be played in a voice channel where you are currently connected. You need to be in a voice channel for the bot to play sounds.
-                """
-        await message.channel.send(info_message)
-
-    if message.content.startswith('$list'):
+    elif message.content.startswith('$list'):
         if AVAILABLE_SOUNDS:
             await send_sound_list_message(message)
         else:
             await message.channel.send('No sounds available.')
 
-    if message.content.startswith('$play'):
-        if message.author.voice:
-            channel = message.author.voice.channel
-            if message.guild.voice_client is None:
-                vc = await channel.connect()
-            else:
-                vc = message.guild.voice_client
-                await vc.move_to(channel)
+    elif message.content.startswith('$play'):
+        await handle_play_command(message)
 
-            parts = message.content.split()
-            if len(parts) < 2:
-                await message.channel.send('Please specify a sound! Example: `/play airhorn`')
-                return
+    # Stop the currently playing sound
+    elif message.content.startswith('$stop'):
+        await stop_sound(message)
 
-            sound_name = parts[1]
-            if sound_name not in AVAILABLE_SOUNDS:
-                await message.channel.send(f'Invalid sound! Available: {", ".join(AVAILABLE_SOUNDS.keys())}')
-                return
+    elif message.content.startswith('$leave'):
+        await handle_leave_command(message)
 
-            sound_path = os.path.join(SOUNDS_FOLDER, AVAILABLE_SOUNDS[sound_name])
-            audio_source = discord.FFmpegPCMAudio(sound_path)
+    elif message.content.startswith('$addsound'):
+        await handle_addsound_command(message)
 
-            if not vc.is_playing():
-                vc.play(audio_source, after=lambda e: print('Finished playing'))
-                await message.channel.send(f'Playing {sound_name} 🔊')
-            else:
-                await message.channel.send('Already playing something! Wait or use /stop')
+async def send_info(message):
+    info_message = """
+            **Available Commands:**
 
+            `$list`: List all available sounds with clickable buttons.
+            `$play <sound_name>`: Play a specific sound. Example: `$play airhorn`
+            `$stop`: Stop the current playing sound.
+            `$leave`: Disconnect the bot from the voice channel.
+            `$addsound <name> <url>`: Add a new sound to the soundboard from a URL.
+            `$info`: Display this message with available commands.
+
+            **Note**: Sounds can be played in a voice channel where you are currently connected.
+            """
+    await message.channel.send(info_message)
+
+async def handle_play_command(message):
+    if message.author.voice:
+        channel = message.author.voice.channel
+        if message.guild.voice_client is None:
+            vc = await channel.connect()
         else:
-            await message.channel.send('You are not in a voice channel!')
+            vc = message.guild.voice_client
+            await vc.move_to(channel)
 
-    if message.content.startswith('$stop'):
-        if message.guild.voice_client and message.guild.voice_client.is_playing():
-            message.guild.voice_client.stop()
-            await message.channel.send('Stopped the sound.')
-        else:
-            await message.channel.send('Nothing is playing.')
-
-    if message.content.startswith('$leave'):
-        if message.guild.voice_client:
-            await message.guild.voice_client.disconnect()
-            await message.channel.send('Disconnected.')
-        else:
-            await message.channel.send('Not connected.')
-
-    if message.content.startswith('$addsound'):
         parts = message.content.split()
-        if len(parts) < 3:
-            await message.channel.send('Usage: /addsound <name> <url_to_mp3_or_wav>')
+        if len(parts) < 2:
+            await message.channel.send('Please specify a sound! Example: `/play airhorn`')
             return
 
-        name = parts[1]
-        url = parts[2]
-        print(url)
+        sound_name = parts[1]
+        if sound_name not in AVAILABLE_SOUNDS:
+            await message.channel.send(f'Invalid sound! Available: {", ".join(AVAILABLE_SOUNDS.keys())}')
+            return
 
-        if 'myinstants' in url:
-            media_url, ext = fetch_data_url(url=url)
+        sound_path = os.path.join(SOUNDS_FOLDER, AVAILABLE_SOUNDS[sound_name])
+        await play_sound(message, sound_name, sound_path)
 
-        sound_path = os.path.join(SOUNDS_FOLDER, f'{name}.{ext}')
-        try:
-            response = requests.get(media_url)
-            response.raise_for_status()
-            with open(sound_path, 'wb') as f:
-                f.write(response.content)
+    else:
+        await message.channel.send('You are not in a voice channel!')
 
-            AVAILABLE_SOUNDS[name] = f'{name}.{ext}'
-            await message.channel.send(f'Added new sound: {name}')
-        except Exception as e:
-            await message.channel.send(f'Failed to download sound: {e}')
+async def handle_leave_command(message):
+    if message.guild.voice_client:
+        await message.guild.voice_client.disconnect()
+        await message.channel.send('Disconnected from the voice channel.')
+    else:
+        await message.channel.send('Not connected to any voice channel.')
 
+async def handle_addsound_command(message):
+    parts = message.content.split()
+    if len(parts) < 3:
+        await message.channel.send('Usage: /addsound <name> <url_to_mp3_or_wav>')
+        return
+
+    name = parts[1]
+    url = parts[2]
+    await add_sound_to_board(message, name, url)
 
 client.run(os.getenv('TOKEN'))

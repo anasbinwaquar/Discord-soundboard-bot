@@ -13,6 +13,4 @@ def fetch_data_url(url):
             ext = 'wav'
         if media_url:
             return f"https://www.myinstants.com{media_url}", ext
-        else:
-            raise Exception("Can't find media url")
     return None
