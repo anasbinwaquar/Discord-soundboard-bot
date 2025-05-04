@@ -20,20 +20,43 @@ class PageButton(Button):
         await self.callback_func(interaction, self.page)
 
 
-def create_sound_list_view(page, total_pages, callback_func):
+def create_sound_list_view(page, total_pages, page_callback):
+    from discord.ui import View, Button
+
     view = View(timeout=None)
+
     sound_names = list(AVAILABLE_SOUNDS.keys())
     start = page * MAX_BUTTONS
     end = start + MAX_BUTTONS
+    current_sounds = sound_names[start:end]
 
-    for sound_name in sound_names[start:end]:
-        view.add_item(SoundButtonFactory.create(sound_name))
+    for sound_name in current_sounds:
+        button = Button(label=sound_name)
 
-    if total_pages > 1:
-        if page > 0:
-            view.add_item(PageButton('⬅️ Previous', page - 1, total_pages, callback_func))
-        if page < total_pages - 1:
-            view.add_item(PageButton('➡️ Next', page + 1, total_pages, callback_func))
+        async def button_callback(inter, name=sound_name):
+            sound_path = os.path.join(SOUNDS_FOLDER, AVAILABLE_SOUNDS[name])
+            await play_sound(inter, name, sound_path)
+
+        button.callback = button_callback
+        view.add_item(button)
+
+    if page > 0:
+        prev_button = Button(label="Previous")
+
+        async def prev_callback(inter):
+            await page_callback(inter, page - 1)
+
+        prev_button.callback = prev_callback
+        view.add_item(prev_button)
+
+    if page < total_pages - 1:
+        next_button = Button(label="Next")
+
+        async def next_callback(inter):
+            await page_callback(inter, page + 1)
+
+        next_button.callback = next_callback
+        view.add_item(next_button)
 
     return view
 
@@ -49,15 +72,28 @@ async def send_sound_list_message(interaction):
     await interaction.response.send_message("Click a sound to play:", view=view)
 
 
+
 async def play_sound(interaction, sound_name, sound_path):
     vc = interaction.guild.voice_client
+
+    if interaction.user.voice is None or interaction.user.voice.channel is None:
+        if not interaction.response.is_done():
+            await interaction.response.send_message("❌ You must be in a voice channel to play sounds!", ephemeral=True)
+        return
+
+    if vc is None:
+        vc = await interaction.user.voice.channel.connect()
+
     audio_source = discord.FFmpegPCMAudio(sound_path)
 
     if vc.is_playing():
         vc.stop()
 
     vc.play(audio_source, after=lambda e: print('Finished playing'))
-    await interaction.followup.send(f'🔊 Playing `{sound_name}`')
+
+    if not interaction.response.is_done():
+        await interaction.response.defer()
+
 
 
 async def stop_sound(interaction):
