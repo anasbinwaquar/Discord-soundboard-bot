@@ -23,7 +23,7 @@ class PageButton(Button):
 def create_sound_list_view(page, total_pages, page_callback):
     from discord.ui import View, Button
 
-    view = View(timeout=None)
+    view = View(timeout=1200)
 
     sound_names = list(AVAILABLE_SOUNDS.keys())
     start = page * MAX_BUTTONS
